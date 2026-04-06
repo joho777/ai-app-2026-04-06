@@ -1,0 +1,2195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ShipSprint AI — From Idea to Demo in 90 Minutes</title>
+  <meta name="description" content="An interactive sandbox inspired by the trend: 'Eight years of wanting, three months of building with AI'. Turn vague ideas into executable plans, prompt packs, and a mini build sprint simulation." />
+  <style>
+    /*
+      ShipSprint AI
+      - Single-file web app (HTML+CSS+JS)
+      - Dark theme background: #0a0e17
+      - Glass cards, gradients, vibrant accents
+      - Interactive: idea intake -> scope -> spec -> prompt pack -> sprint sim -> demo pitch
+    */
+
+    :root{
+      --bg:#0a0e17;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.90);
+      --muted: rgba(255,255,255,.70);
+      --faint: rgba(255,255,255,.55);
+      --danger:#ff4d6d;
+      --ok:#30e3a6;
+      --warn:#ffcc66;
+      --accent:#7c5cff;
+      --accent2:#00d4ff;
+      --accent3:#ff5cff;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --ring: 0 0 0 2px rgba(124,92,255,.35), 0 0 0 6px rgba(0,212,255,.10);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 10% 10%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(0,212,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 40% 110%, rgba(255,92,255,.14), transparent 55%),
+        linear-gradient(180deg, #070b12 0%, #0a0e17 40%, #070b12 100%);
+      overflow-x:hidden;
+    }
+
+    a{ color: inherit; }
+
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 22px 18px 90px;
+    }
+
+    header{
+      display:flex;
+      gap:18px;
+      align-items:flex-start;
+      justify-content:space-between;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      padding: 14px 0;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: linear-gradient(180deg, rgba(10,14,23,.85) 0%, rgba(10,14,23,.55) 70%, rgba(10,14,23,0) 100%);
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .logoRow{ display:flex; gap:10px; align-items:center; }
+
+    .logo{
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background:
+        radial-gradient(12px 12px at 25% 30%, rgba(255,255,255,.28), transparent 60%),
+        linear-gradient(135deg, rgba(124,92,255,.95), rgba(0,212,255,.9));
+      box-shadow: 0 12px 30px rgba(124,92,255,.20), 0 12px 30px rgba(0,212,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
+      position: relative;
+      overflow:hidden;
+    }
+
+    .logo:after{
+      content:"";
+      position:absolute;
+      inset:-60% -60% auto auto;
+      width: 140%;
+      height: 140%;
+      transform: rotate(28deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+      animation: sheen 3.6s ease-in-out infinite;
+      opacity:.9;
+    }
+
+    @keyframes sheen{
+      0%{ transform: translateX(-40%) rotate(28deg); opacity:.0; }
+      25%{ opacity:.7; }
+      50%{ transform: translateX(40%) rotate(28deg); opacity:.1; }
+      100%{ transform: translateX(40%) rotate(28deg); opacity:0; }
+    }
+
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+
+    .tagline{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 680px;
+      line-height: 1.35;
+    }
+
+    .rightControls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 9px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,.28);
+    }
+
+    .pill strong{ font-size: 12px; color: rgba(255,255,255,.88); }
+    .pill span{ font-size: 12px; color: rgba(255,255,255,.68); }
+
+    .btn{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: rgba(255,255,255,.92);
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.085); border-color: rgba(255,255,255,.18); }
+    .btn:active{ transform: translateY(0px); }
+
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(0,212,255,.85));
+      border-color: rgba(255,255,255,.18);
+      box-shadow: 0 18px 40px rgba(124,92,255,.18), 0 18px 40px rgba(0,212,255,.12);
+    }
+
+    .btn.primary:hover{ filter: brightness(1.06); }
+
+    .btn.danger{
+      background: rgba(255,77,109,.14);
+      border-color: rgba(255,77,109,.22);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+      align-items:start;
+    }
+
+    @media (max-width: 960px){
+      header{ position:relative; }
+      .grid{ grid-template-columns: 1fr; }
+      .rightControls{ justify-content:flex-start; }
+    }
+
+    .card{
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .card:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(600px 240px at 20% 0%, rgba(124,92,255,.14), transparent 60%),
+        radial-gradient(700px 240px at 80% 0%, rgba(0,212,255,.12), transparent 60%);
+      pointer-events:none;
+    }
+
+    .cardHeader{
+      padding: 14px 14px 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+      position:relative;
+      z-index:1;
+    }
+
+    .cardHeader h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+
+    .sub{
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+
+    .cardBody{ padding: 0 14px 14px; position:relative; z-index:1; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row > *{ flex:1; min-width: 160px; }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: rgba(255,255,255,.78);
+      margin: 12px 0 6px;
+    }
+
+    input[type="text"], textarea, select{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: rgba(255,255,255,.92);
+      outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      transition: box-shadow .12s ease, border-color .12s ease;
+    }
+
+    textarea{ min-height: 86px; resize: vertical; }
+
+    input[type="text"]:focus, textarea:focus, select:focus{
+      border-color: rgba(124,92,255,.45);
+      box-shadow: var(--ring);
+    }
+
+    .mini{ font-size: 12px; color: var(--muted); line-height:1.35; }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.10);
+      margin: 14px 0;
+    }
+
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+
+    .chip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease;
+      user-select:none;
+    }
+
+    .chip:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+
+    .chip.active{
+      background: linear-gradient(135deg, rgba(124,92,255,.55), rgba(0,212,255,.22));
+      border-color: rgba(124,92,255,.40);
+    }
+
+    .kpiRow{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
+    @media (max-width: 720px){ .kpiRow{ grid-template-columns: repeat(2, 1fr);} }
+
+    .kpi{
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .kpi .num{ font-weight:700; font-size: 18px; letter-spacing:.2px; }
+    .kpi .lbl{ font-size: 11px; color: var(--muted); margin-top:4px; line-height:1.25; }
+
+    .kpi .num.ok{ color: var(--ok); }
+    .kpi .num.warn{ color: var(--warn); }
+    .kpi .num.bad{ color: var(--danger); }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      padding: 10px 10px 0;
+      flex-wrap:wrap;
+      position:relative;
+      z-index:1;
+    }
+
+    .tab{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+      cursor:pointer;
+      user-select:none;
+      transition: transform .12s ease, background .12s ease;
+    }
+
+    .tab:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .tab.active{
+      background: linear-gradient(135deg, rgba(255,92,255,.30), rgba(124,92,255,.35), rgba(0,212,255,.22));
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .panel{ display:none; }
+    .panel.active{ display:block; }
+
+    .out{
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height:1.45;
+      color: rgba(255,255,255,.86);
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.12);
+      white-space: pre-wrap;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .out .hint{ color: rgba(255,255,255,.55); }
+
+    .outActions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+
+    .smallBtn{
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .statusLine{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top: 10px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      font-size: 12px;
+      color: rgba(255,255,255,.78);
+    }
+
+    .dot{ width:10px; height:10px; border-radius:999px; background: rgba(255,255,255,.35); box-shadow: 0 0 0 2px rgba(255,255,255,.08); }
+    .dot.ok{ background: rgba(48,227,166,.9); }
+    .dot.warn{ background: rgba(255,204,102,.9); }
+    .dot.bad{ background: rgba(255,77,109,.9); }
+
+    .timeline{
+      margin-top: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+
+    .tlRow{
+      display:grid;
+      grid-template-columns: 110px 1fr;
+      gap:10px;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .tlRow:first-child{ border-top:none; }
+    .tlTime{ font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,.62); }
+    .tlMsg{ font-size: 12px; color: rgba(255,255,255,.82); line-height:1.35; }
+
+    .meter{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+
+    .meter > i{
+      display:block;
+      height:100%;
+      width: 50%;
+      background: linear-gradient(90deg, rgba(48,227,166,.9), rgba(255,204,102,.9), rgba(255,77,109,.9));
+      border-radius:999px;
+      filter: saturate(1.1);
+    }
+
+    .twoCol{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 720px){ .twoCol{ grid-template-columns: 1fr; } }
+
+    .modalOverlay{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.62);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 80;
+    }
+
+    .modalOverlay.show{ display:flex; }
+
+    .modal{
+      width: min(920px, 100%);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 24px 90px rgba(0,0,0,.65);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .modalHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .modalHeader h3{ margin:0; font-size: 13px; color: rgba(255,255,255,.86); }
+    .modalBody{ padding: 12px; }
+
+    .toastWrap{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 90;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:none;
+    }
+
+    .toast{
+      width: min(420px, calc(100vw - 32px));
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(15,18,30,.82);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      pointer-events:auto;
+      transform: translateY(10px);
+      opacity:0;
+      animation: toastIn .22s ease forwards;
+    }
+
+    @keyframes toastIn{ to{ transform: translateY(0); opacity:1; } }
+
+    .toast .tTitle{ font-weight:700; font-size: 12px; color: rgba(255,255,255,.90); }
+    .toast .tBody{ margin-top:4px; font-size: 12px; color: rgba(255,255,255,.70); line-height:1.35; }
+
+    .footer{
+      margin-top: 16px;
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:center;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+    }
+
+    .kbd{
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.82);
+    }
+
+    .spark{
+      width:100%;
+      height: 130px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      position:relative;
+    }
+
+    canvas{ display:block; width:100%; height:100%; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logoRow">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>ShipSprint AI</h1>
+            <p class="tagline">Inspired by the trend "Eight years of wanting, three months of building with AI" — compress a fuzzy idea into a shippable demo plan, generate a prompt pack, and run a mini sprint simulation with time, quality, and scope tradeoffs.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rightControls">
+        <div class="pill" title="Local-only. No network calls.">
+          <strong>Mode</strong>
+          <span id="modePill">Local sandbox</span>
+        </div>
+        <button class="btn" id="btnHotkeys" type="button">Hotkeys</button>
+        <button class="btn" id="btnExport" type="button">Export</button>
+        <button class="btn danger" id="btnReset" type="button">Reset</button>
+        <button class="btn primary" id="btnStart" type="button">Generate Plan</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Builder -->
+      <section class="card">
+        <div class="cardHeader">
+          <div>
+            <h2>1) Idea Intake</h2>
+            <p class="sub">Describe the thing you want to build. Then dial constraints (time, ambition, risk tolerance). ShipSprint converts it into: scope, spec, prompt pack, and demo pitch.</p>
+          </div>
+          <div class="badge" title="Trend source">
+            <span class="dot ok" aria-hidden="true"></span>
+            <span>Trend: builder velocity</span>
+          </div>
+        </div>
+        <div class="cardBody">
+          <label for="idea">What are you building?</label>
+          <textarea id="idea" placeholder="Example: A personal finance tracker that imports CSVs, categorizes spending, and generates weekly insights."></textarea>
+
+          <div class="row">
+            <div>
+              <label for="audience">Target audience</label>
+              <input id="audience" type="text" placeholder="Who is this for?" />
+            </div>
+            <div>
+              <label for="deadline">Ship window</label>
+              <select id="deadline">
+                <option value="45">45 minutes (micro demo)</option>
+                <option value="90" selected>90 minutes (solid demo)</option>
+                <option value="180">3 hours (polished MVP)</option>
+                <option value="480">1 day (real product slice)</option>
+              </select>
+            </div>
+            <div>
+              <label for="risk">Risk tolerance</label>
+              <select id="risk">
+                <option value="low">Low (safe, obvious)</option>
+                <option value="med" selected>Medium (balanced)</option>
+                <option value="high">High (bold, experimental)</option>
+              </select>
+            </div>
+          </div>
+
+          <label>Pick a build archetype</label>
+          <div class="chips" id="archetypes">
+            <div class="chip active" data-k="analyzer">Analyzer</div>
+            <div class="chip" data-k="simulator">Simulator</div>
+            <div class="chip" data-k="creator">Creator</div>
+            <div class="chip" data-k="dashboard">Dashboard</div>
+            <div class="chip" data-k="game">Game</div>
+            <div class="chip" data-k="agent">Agentic workflow</div>
+          </div>
+          <p class="mini">Tip: archetype nudges the outputs (spec format, prompts, sprint tasks). You can mix later.</p>
+
+          <div class="divider"></div>
+
+          <div class="kpiRow">
+            <div class="kpi">
+              <div class="num" id="kpiScope">—</div>
+              <div class="lbl">Scope size</div>
+            </div>
+            <div class="kpi">
+              <div class="num" id="kpiQuality">—</div>
+              <div class="lbl">Quality target</div>
+            </div>
+            <div class="kpi">
+              <div class="num" id="kpiComplexity">—</div>
+              <div class="lbl">Complexity</div>
+            </div>
+            <div class="kpi">
+              <div class="num" id="kpiChance">—</div>
+              <div class="lbl">Ship chance</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="twoCol">
+            <div>
+              <label>Constraints</label>
+              <div class="chips" id="constraints"></div>
+              <p class="mini">Click to toggle. Constraints affect task selection and plan realism.</p>
+            </div>
+            <div>
+              <label>Ingredients (optional)</label>
+              <div class="chips" id="ingredients"></div>
+              <p class="mini">Pick building blocks you want in the demo (file import, charts, auth, etc.).</p>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="statusLine">
+            <div class="badge" id="statusBadge"><span class="dot warn"></span><span id="statusText">Waiting for your idea…</span></div>
+            <div class="row" style="max-width:460px;">
+              <button class="btn smallBtn" id="btnRandom" type="button">Random Idea</button>
+              <button class="btn smallBtn" id="btnTighten" type="button">Tighten Scope</button>
+              <button class="btn smallBtn" id="btnBold" type="button">Go Bold</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Right: Output -->
+      <aside class="card">
+        <div class="tabs" role="tablist" aria-label="Outputs">
+          <div class="tab active" data-tab="spec" role="tab" tabindex="0">Spec</div>
+          <div class="tab" data-tab="prompts" role="tab" tabindex="0">Prompt Pack</div>
+          <div class="tab" data-tab="sprint" role="tab" tabindex="0">Sprint Sim</div>
+          <div class="tab" data-tab="pitch" role="tab" tabindex="0">Demo Pitch</div>
+        </div>
+
+        <div class="cardBody">
+          <div class="panel active" id="panel-spec">
+            <div class="out" id="outSpec"><span class="hint">Click “Generate Plan” to produce a compact spec with milestones, acceptance criteria, and edge cases.</span></div>
+            <div class="outActions">
+              <button class="btn smallBtn" data-copy="outSpec" type="button">Copy</button>
+              <button class="btn smallBtn" data-download="spec" type="button">Download</button>
+              <button class="btn smallBtn" id="btnCritique" type="button">Self-Critique</button>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-prompts">
+            <div class="out" id="outPrompts"><span class="hint">Generate a prompt pack: product brief, UI plan, data model, and test prompts you can paste into an LLM.</span></div>
+            <div class="outActions">
+              <button class="btn smallBtn" data-copy="outPrompts" type="button">Copy</button>
+              <button class="btn smallBtn" data-download="prompts" type="button">Download</button>
+              <button class="btn smallBtn" id="btnPromptMutate" type="button">Mutate Prompts</button>
+            </div>
+          </div>
+
+          <div class="panel" id="panel-sprint">
+            <div class="kpiRow" style="margin-bottom:10px;">
+              <div class="kpi"><div class="num" id="simTime">—</div><div class="lbl">Minutes left</div></div>
+              <div class="kpi"><div class="num" id="simQuality">—</div><div class="lbl">Quality</div></div>
+              <div class="kpi"><div class="num" id="simScope">—</div><div class="lbl">Scope</div></div>
+              <div class="kpi"><div class="num" id="simStress">—</div><div class="lbl">Stress</div></div>
+            </div>
+
+            <div class="spark"><canvas id="spark"></canvas></div>
+
+            <div class="divider"></div>
+            <div class="mini">Sprint is a toy simulation: you pick next actions; each action changes time, scope, quality, and stress. The goal is to finish a demo slice with a coherent story.</div>
+
+            <div class="outActions" style="margin-top:10px;">
+              <button class="btn smallBtn" id="btnSimStart" type="button">Start Sprint</button>
+              <button class="btn smallBtn" id="btnSimStep" type="button">Next Action</button>
+              <button class="btn smallBtn" id="btnSimAuto" type="button">Auto-Run</button>
+              <button class="btn smallBtn" id="btnSimReset" type="button">Reset Sim</button>
+            </div>
+
+            <div class="timeline" id="timeline"></div>
+          </div>
+
+          <div class="panel" id="panel-pitch">
+            <div class="out" id="outPitch"><span class="hint">Generate a crisp 30-second demo pitch for sharing on X/Twitter or shipping internally.</span></div>
+            <div class="outActions">
+              <button class="btn smallBtn" data-copy="outPitch" type="button">Copy</button>
+              <button class="btn smallBtn" data-download="pitch" type="button">Download</button>
+              <button class="btn smallBtn" id="btnTweet" type="button">Make Tweet Draft</button>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div>Shortcuts: <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> Generate • <span class="kbd">/</span> focus idea • <span class="kbd">Esc</span> close modal</div>
+            <div id="seedLine" class="mini">Seed: —</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true" aria-label="Modal">
+    <div class="modal">
+      <div class="modalHeader">
+        <h3 id="modalTitle">Modal</h3>
+        <button class="btn smallBtn" id="btnModalClose" type="button">Close</button>
+      </div>
+      <div class="modalBody">
+        <div class="out" id="modalOut"></div>
+        <div class="outActions">
+          <button class="btn smallBtn" id="btnModalCopy" type="button">Copy</button>
+          <button class="btn smallBtn" id="btnModalDownload" type="button">Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toastWrap" id="toastWrap" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    /*********************
+     * ShipSprint AI
+     * Local-only generator + toy simulation
+     *
+     * Design goals:
+     * - Make the trend tangible: AI accelerates “idea -> build” loops.
+     * - Provide useful artifacts: spec, prompt pack, pitch.
+     * - Add interactivity: constraints toggles, archetypes, simulation.
+     * - Keep everything offline (no API calls).
+     *********************/
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const state = {
+      seed: 0,
+      archetype: 'analyzer',
+      constraints: new Set(),
+      ingredients: new Set(),
+      lastPlan: null,
+      sim: null
+    };
+
+    // ---------- Utilities ----------
+
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function hashSeed(str){
+      // simple deterministic hash
+      let h = 2166136261;
+      for(let i=0;i<str.length;i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      // make positive 32-bit
+      return (h >>> 0);
+    }
+
+    function mulberry32(a){
+      return function(){
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+    }
+
+    function pick(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
+
+    function pct(x){ return Math.round(x*100) + '%'; }
+
+    function fmt(n){
+      if(typeof n !== 'number') return String(n);
+      return n.toFixed(0);
+    }
+
+    function nowTime(){
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
+    }
+
+    function toast(title, body){
+      const wrap = $('#toastWrap');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = `<div class="tTitle">${escapeHtml(title)}</div><div class="tBody">${escapeHtml(body)}</div>`;
+      wrap.appendChild(el);
+      setTimeout(()=>{
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.transition = 'opacity .22s ease, transform .22s ease';
+        setTimeout(()=> el.remove(), 260);
+      }, 3200);
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        toast('Copied', 'Text is in your clipboard.');
+      }catch(e){
+        toast('Copy failed', 'Your browser blocked clipboard access. Use Export instead.');
+      }
+    }
+
+    function downloadText(filename, text){
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 2000);
+      toast('Downloaded', filename);
+    }
+
+    // ---------- Builder data ----------
+
+    const CONSTRAINTS = [
+      {k:'offline', name:'Offline-only', hint:'No backend, no external APIs'},
+      {k:'noauth', name:'No auth', hint:'Avoid accounts/login'},
+      {k:'nocharts', name:'No heavy charts', hint:'Keep visuals lightweight'},
+      {k:'accessibility', name:'Accessibility', hint:'Keyboard, contrast, semantics'},
+      {k:'privacy', name:'Privacy-first', hint:'No personal data stored'},
+      {k:'mobile', name:'Mobile-first', hint:'Small screens primary'},
+      {k:'speed', name:'Performance', hint:'Fast interactions & render'},
+      {k:'nodatabases', name:'No database', hint:'In-memory only'},
+      {k:'limiteddeps', name:'No dependencies', hint:'Vanilla JS, minimal libs'}
+    ];
+
+    const INGREDIENTS = [
+      {k:'import', name:'File import', hint:'Parse CSV/JSON user data'},
+      {k:'export', name:'Export', hint:'Download artifacts'},
+      {k:'sim', name:'Simulation', hint:'A toy world with actions'},
+      {k:'quiz', name:'Quiz', hint:'Assess understanding'},
+      {k:'canvas', name:'Canvas viz', hint:'A small chart or animation'},
+      {k:'templates', name:'Templates', hint:'Presets & starter ideas'},
+      {k:'scoring', name:'Scoring', hint:'Rank options with explainability'},
+      {k:'checklist', name:'Checklist', hint:'Step-by-step completion'},
+      {k:'timeline', name:'Timeline', hint:'Log of actions'}
+    ];
+
+    const ARCHETYPES = {
+      analyzer: {
+        vibe: 'Clarity through structure',
+        outputs: ['Problem framing', 'Data model', 'Edge cases'],
+        focus: {scope: .55, quality: .70, novelty: .35}
+      },
+      simulator: {
+        vibe: 'Learn by running the system',
+        outputs: ['State transitions', 'Actions & payoffs', 'Metrics'],
+        focus: {scope: .60, quality: .55, novelty: .45}
+      },
+      creator: {
+        vibe: 'Make something delightful',
+        outputs: ['Style system', 'Creation flow', 'Sharing'],
+        focus: {scope: .58, quality: .60, novelty: .60}
+      },
+      dashboard: {
+        vibe: 'One glance to insight',
+        outputs: ['KPIs', 'Filters', 'Export'],
+        focus: {scope: .62, quality: .65, novelty: .30}
+      },
+      game: {
+        vibe: 'Engagement with rules',
+        outputs: ['Levels', 'Feedback loops', 'Scoring'],
+        focus: {scope: .65, quality: .55, novelty: .60}
+      },
+      agent: {
+        vibe: 'Orchestrate steps with guardrails',
+        outputs: ['Task graph', 'Tools', 'Checks'],
+        focus: {scope: .60, quality: .62, novelty: .50}
+      }
+    };
+
+    const RANDOM_IDEAS = [
+      'A job application tracker that turns notes into tailored follow-ups and a weekly momentum dashboard.',
+      'A recipe remixer that converts any recipe into high-protein, vegetarian, or budget modes with a shopping list.',
+      'A study planner that turns a syllabus into a daily schedule, flashcard prompts, and quick self-tests.',
+      'A music discovery journal that turns your moods into playlists and short reflection prompts.',
+      'A micro habit builder that converts goals into 5-minute actions, streaks, and a minimal dashboard.',
+      'A travel itinerary builder that maps constraints (budget, walking distance) into a day-by-day plan.',
+      'A customer feedback triage tool that tags themes, proposes experiments, and tracks outcomes.',
+      'A personal knowledge base that turns messy notes into structured pages with backlinks and review prompts.'
+    ];
+
+    // ---------- Plan generation ----------
+
+    function computeKPIs(deadlineMin, risk, archetype, constraints, ingredients, ideaText){
+      const a = ARCHETYPES[archetype] || ARCHETYPES.analyzer;
+
+      // base levers
+      const timeFactor = clamp(deadlineMin / 180, .25, 2.5);
+      const riskFactor = risk === 'low' ? .80 : risk === 'high' ? 1.20 : 1.0;
+      const constraintPenalty = clamp(1 - (constraints.size * 0.03), .72, 1.0);
+      const ingredientBonus = clamp(1 + (ingredients.size * 0.03), 1.0, 1.25);
+
+      // estimate scope: ingredients increase, constraints reduce
+      let scope = 55 * timeFactor * a.focus.scope * ingredientBonus * constraintPenalty;
+      // quality target is higher with constraints like accessibility and performance, lower with high risk
+      let quality = 60 * timeFactor * a.focus.quality * (constraints.has('accessibility') ? 1.10 : 1.0) * (constraints.has('speed') ? 1.06 : 1.0) * (risk === 'high' ? .92 : 1.0);
+      // complexity grows with ingredient count and novelty
+      let complexity = 40 * timeFactor * (1 + ingredients.size*0.08) * (risk === 'high' ? 1.18 : risk === 'low' ? .92 : 1.0) * (a.focus.novelty + .55);
+
+      scope = clamp(scope, 10, 120);
+      quality = clamp(quality, 20, 100);
+      complexity = clamp(complexity, 10, 130);
+
+      // ship chance drops if complexity exceeds scope/quality ratio
+      const clarity = clamp((ideaText.trim().length / 220), .2, 1.0);
+      const balance = clamp((scope + quality) / (complexity*1.22), .15, 1.25);
+      let chance = clamp(0.22 + 0.48*clarity + 0.30*balance, 0.04, 0.96);
+
+      // constraints like offline/noauth increase reliability
+      if(constraints.has('offline')) chance = clamp(chance + .03, 0, 0.98);
+      if(constraints.has('noauth')) chance = clamp(chance + .02, 0, 0.98);
+      if(constraints.has('privacy')) chance = clamp(chance + .02, 0, 0.98);
+
+      // too many ingredients can overwhelm
+      if(ingredients.size >= 6) chance = clamp(chance - .06, 0, 0.98);
+
+      // risk high reduces chance but can increase delight (not modeled)
+      if(risk === 'high') chance = clamp(chance - .05, 0, 0.98);
+
+      const scopeLabel = scope < 35 ? 'Tiny' : scope < 65 ? 'Small' : scope < 95 ? 'Medium' : 'Large';
+      const qualityLabel = quality < 45 ? 'Rough' : quality < 70 ? 'Good' : quality < 88 ? 'Great' : 'Excellent';
+      const complexityLabel = complexity < 45 ? 'Low' : complexity < 75 ? 'Moderate' : complexity < 105 ? 'High' : 'Spicy';
+      const chanceLabel = chance < .40 ? 'Risky' : chance < .62 ? 'Possible' : chance < .80 ? 'Likely' : 'Very likely';
+
+      return {
+        scope, quality, complexity, chance,
+        scopeLabel, qualityLabel, complexityLabel, chanceLabel
+      };
+    }
+
+    function deriveSlices(rng, archetype, deadlineMin, constraints, ingredients){
+      const baseSlices = {
+        analyzer: [
+          'Problem statement + non-goals',
+          'Inputs/outputs + data shape',
+          'Core flows (happy path)',
+          'Edge cases + failure modes',
+          'Minimal UI layout + states'
+        ],
+        simulator: [
+          'State model + starting state',
+          'Action list + effects',
+          'Metrics panel + logging',
+          'Balancing pass (values)',
+          'Onboarding + reset'
+        ],
+        creator: [
+          'Creation flow (step-by-step)',
+          'Style presets + remix',
+          'Export/share output',
+          'Undo/redo or history',
+          'Gallery or examples'
+        ],
+        dashboard: [
+          'Dataset schema + sample data',
+          'KPIs + filters',
+          'Detail view panel',
+          'Export snapshot',
+          'Empty/error states'
+        ],
+        game: [
+          'Rules + scoring',
+          'Round loop (start → play → result)',
+          'Difficulty knobs',
+          'Achievements',
+          'Replayability (randomness)'
+        ],
+        agent: [
+          'Task graph (steps)',
+          'Guardrails + checks',
+          'Artifacts (spec, prompts)',
+          'Retry/fallback strategy',
+          'Run history + audit'
+        ]
+      };
+
+      let slices = [...(baseSlices[archetype] || baseSlices.analyzer)];
+
+      // Ingredient-driven inserts
+      if(ingredients.has('import')) slices.splice(1, 0, 'Import flow (CSV/JSON) + validation');
+      if(ingredients.has('canvas')) slices.splice(2, 0, 'Lightweight visual (canvas chart/animation)');
+      if(ingredients.has('quiz')) slices.push('Quiz/checkpoint to validate value');
+      if(ingredients.has('scoring')) slices.push('Scoring with explainability panel');
+      if(ingredients.has('timeline')) slices.push('Activity timeline (events/logs)');
+
+      // Constraint-driven changes
+      if(constraints.has('limiteddeps')) slices.push('No-deps verification (remove libraries)');
+      if(constraints.has('accessibility')) slices.push('Keyboard + focus states + semantic roles');
+      if(constraints.has('mobile')) slices.push('Mobile layout pass (responsive)');
+      if(constraints.has('speed')) slices.push('Performance pass (avoid heavy DOM, throttle rendering)');
+
+      // Time-driven trimming
+      const budget = deadlineMin;
+      const maxSlices = budget <= 45 ? 5 : budget <= 90 ? 7 : budget <= 180 ? 9 : 12;
+      if(slices.length > maxSlices){
+        // keep first few and randomly choose rest
+        const head = slices.slice(0, 4);
+        const tail = slices.slice(4);
+        // shuffle tail deterministically
+        for(let i=tail.length-1;i>0;i--){
+          const j = Math.floor(rng()*(i+1));
+          [tail[i], tail[j]] = [tail[j], tail[i]];
+        }
+        slices = head.concat(tail.slice(0, maxSlices-4));
+      }
+
+      return slices;
+    }
+
+    function deriveAcceptance(rng, ideaText, archetype, constraints, ingredients){
+      const common = [
+        'Happy path completes without errors',
+        'All primary UI states are reachable (empty/loading/success)',
+        'Export produces a readable artifact',
+        'Keyboard navigation works for all interactive controls',
+        'No user data leaves the browser'
+      ];
+
+      const extra = {
+        analyzer: [
+          'Spec includes non-goals to prevent scope creep',
+          'Edge cases list at least 8 distinct failures',
+          'Data model is explicit (fields + types)'
+        ],
+        simulator: [
+          'Actions have clear tradeoffs (time/quality/scope)',
+          'At least 10 simulation events are logged',
+          'Reset returns to a deterministic starting state'
+        ],
+        creator: [
+          'At least 3 presets exist and are editable',
+          'History/undo prevents accidental loss',
+          'Output is shareable (downloadable text or image)'
+        ],
+        dashboard: [
+          'KPIs update when filters change',
+          'At least 2 views (summary + detail)',
+          'Empty dataset shows a helpful message'
+        ],
+        game: [
+          'Scoring rules are visible and consistent',
+          'Difficulty changes the player experience',
+          'A round can be completed in under 30 seconds'
+        ],
+        agent: [
+          'Plan has steps with checks (definition of done)',
+          'Fallback steps exist when a tool fails',
+          'Run history can be exported'
+        ]
+      };
+
+      let out = [...common, ...(extra[archetype] || extra.analyzer)];
+
+      if(constraints.has('offline')) out = out.filter(x => !x.toLowerCase().includes('loading'));
+      if(ingredients.has('import')) out.push('Import rejects malformed files with clear error messages');
+      if(ingredients.has('canvas')) out.push('Canvas viz renders within 16ms per frame (no jank)');
+      if(ingredients.has('quiz')) out.push('Quiz provides immediate feedback and a score');
+
+      // Pick 7-10
+      const target = 8 + Math.floor(rng()*3);
+      // deterministic shuffle
+      for(let i=out.length-1;i>0;i--){
+        const j = Math.floor(rng()*(i+1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      out = out.slice(0, target);
+
+      // Add one idea-specific criterion
+      const nouns = extractNouns(ideaText);
+      if(nouns.length){
+        out.unshift(`Core flow supports: ${nouns.slice(0,3).join(', ')}`);
+      }else{
+        out.unshift('Core flow supports the described user goal end-to-end');
+      }
+      return out;
+    }
+
+    function extractNouns(text){
+      // Tiny heuristic: pick longer words excluding stopwords.
+      const stop = new Set(['the','and','for','with','that','this','from','into','your','you','are','was','were','will','can','have','has','had','but','not','use','using','build','app','tool','make','demo','a','an','to','of','in','on','at','by','as','it','is']);
+      const words = (text||'').toLowerCase().replace(/[^a-z0-9\s-]/g,' ').split(/\s+/).filter(Boolean);
+      const cand = words.filter(w => w.length >= 6 && !stop.has(w));
+      // unique preserving order
+      const seen = new Set();
+      const out = [];
+      for(const w of cand){
+        if(!seen.has(w)) { seen.add(w); out.push(w); }
+      }
+      return out.slice(0, 12);
+    }
+
+    function buildSpec(plan){
+      const {ideaText, audience, deadlineMin, risk, archetype, kpis, slices, acceptance, edgeCases, seed} = plan;
+      const a = ARCHETYPES[archetype] || ARCHETYPES.analyzer;
+
+      const header = [
+        '# ShipSprint Spec',
+        '',
+        `Idea: ${ideaText.trim() || '(missing)'}`,
+        `Audience: ${audience.trim() || '(unspecified)'}`,
+        `Archetype: ${archetype} — ${a.vibe}`,
+        `Ship window: ${deadlineMin} minutes`,
+        `Risk tolerance: ${risk}`,
+        `Seed: ${seed}`,
+        '',
+        '## Goal',
+        goalFromIdea(ideaText),
+        '',
+        '## Non-goals (anti-scope)',
+        nonGoals(archetype, deadlineMin),
+        '',
+        '## Scope slices (milestones)',
+        slices.map((s,i)=>`- M${i+1}: ${s}`).join('\n'),
+        '',
+        '## Acceptance criteria',
+        acceptance.map(x=>`- ${x}`).join('\n'),
+        '',
+        '## Edge cases to test',
+        edgeCases.map(x=>`- ${x}`).join('\n'),
+        '',
+        '## Quality dial',
+        `- Scope size: ${kpis.scopeLabel} (${fmt(kpis.scope)})`,
+        `- Complexity: ${kpis.complexityLabel} (${fmt(kpis.complexity)})`,
+        `- Quality target: ${kpis.qualityLabel} (${fmt(kpis.quality)})`,
+        `- Ship chance: ${kpis.chanceLabel} (${pct(kpis.chance)})`,
+        '',
+        '## Implementation sketch (UI + state)',
+        uiSketch(archetype),
+        '',
+        '## Demo script (30 seconds)',
+        demoScript(ideaText),
+        ''
+      ].join('\n');
+
+      return header;
+    }
+
+    function goalFromIdea(ideaText){
+      const t = (ideaText||'').trim();
+      if(!t) return '- Let a user complete the core job-to-be-done in under 2 minutes, with a clear before/after.';
+      return `- Turn “${t.slice(0, 120)}${t.length>120?'…':''}” into a single, satisfying end-to-end flow a user can finish quickly.`;
+    }
+
+    function nonGoals(archetype, deadlineMin){
+      const lines = [];
+      lines.push('- Do not add accounts, payments, or multi-tenant architecture.');
+      lines.push('- Do not chase pixel-perfect design at the expense of the core flow.');
+      lines.push('- Do not optimize for every edge case before the happy path works.');
+      if(deadlineMin <= 90) lines.push('- Do not add a backend; keep it a single-page offline demo.');
+      if(archetype === 'dashboard') lines.push('- Do not build a full BI tool; ship only 3–5 meaningful KPIs.');
+      if(archetype === 'game') lines.push('- Do not build content-heavy levels; ship one strong loop with variability.');
+      if(archetype === 'agent') lines.push('- Do not claim full autonomy; include checks and human control points.');
+      return lines.map(x=>`- ${x.replace(/^\-\s*/,'')}`).join('\n');
+    }
+
+    function uiSketch(archetype){
+      const base = [
+        '- Header: name + concise value prop + export/reset',
+        '- Left: input controls (idea, constraints, knobs)',
+        '- Right: outputs (spec, prompts, pitch) in tabs',
+        '- Footer: shortcuts + seed + quick actions'
+      ];
+      const extra = {
+        analyzer: ['- Add “Self-critique” panel to highlight ambiguity and missing details'],
+        simulator: ['- Add timeline log + metric cards + small chart'],
+        creator: ['- Add presets + gallery grid + history timeline'],
+        dashboard: ['- Add filter chips + KPI cards + detail drawer'],
+        game: ['- Add round controls + scoring + replay button'],
+        agent: ['- Add step runner UI + checkmarks + retry buttons']
+      };
+      return base.concat(extra[archetype] || []).map(x=>`- ${x.replace(/^\-\s*/,'')}`).join('\n');
+    }
+
+    function demoScript(ideaText){
+      const t = (ideaText||'').trim() || 'this idea';
+      return [
+        `- “I built a tiny demo for ${t}. It turns a vague idea into a spec, prompt pack, and a short sprint plan.”`,
+        '- “First, I enter the idea and constraints. The app computes a ship chance and suggests scope slices.”',
+        '- “Then it generates acceptance criteria and edge cases so the demo is testable.”',
+        '- “Finally, I run a toy sprint simulation to pick what to do next, and export the artifacts.”'
+      ].join('\n');
+    }
+
+    function buildPromptPack(plan){
+      const {ideaText, audience, deadlineMin, risk, archetype, constraints, ingredients, slices, acceptance, edgeCases, seed} = plan;
+      const cList = [...constraints].map(k=>CONSTRAINTS.find(x=>x.k===k)?.name||k);
+      const iList = [...ingredients].map(k=>INGREDIENTS.find(x=>x.k===k)?.name||k);
+      const a = ARCHETYPES[archetype] || ARCHETYPES.analyzer;
+
+      const prompts = [];
+      prompts.push('# ShipSprint Prompt Pack');
+      prompts.push('');
+      prompts.push('Use these prompts in your favorite LLM. They are written to minimize back-and-forth.');
+      prompts.push('');
+
+      prompts.push('## 1) Product brief (one-shot)');
+      prompts.push('Role: You are a pragmatic product engineer.');
+      prompts.push('Task: Convert the idea into a tight product brief with non-goals and a minimal MVP.');
+      prompts.push('Constraints:');
+      prompts.push(`- Ship window: ${deadlineMin} minutes`);
+      prompts.push(`- Risk tolerance: ${risk}`);
+      prompts.push(`- Archetype: ${archetype} (${a.vibe})`);
+      prompts.push(`- Constraints toggled: ${cList.length?cList.join(', '):'(none)'}`);
+      prompts.push(`- Ingredients requested: ${iList.length?iList.join(', '):'(none)'}`);
+      prompts.push('Input idea:');
+      prompts.push('---');
+      prompts.push(ideaText.trim() || '(missing)');
+      prompts.push('---');
+      prompts.push('Output format:');
+      prompts.push('- 1 paragraph summary');
+      prompts.push('- 5 bullet MVP features');
+      prompts.push('- 5 bullet non-goals');
+      prompts.push('- 8 bullet edge cases');
+      prompts.push('- 5 bullet success metrics');
+      prompts.push('');
+
+      prompts.push('## 2) UI plan (wireframe in text)');
+      prompts.push('Role: You are a senior frontend engineer.');
+      prompts.push('Task: Propose a single-page UI layout with components, states, and interactions.');
+      prompts.push('Must include:');
+      prompts.push('- Primary flow (happy path)');
+      prompts.push('- Empty/error states');
+      prompts.push('- Keyboard accessibility notes');
+      prompts.push('- Mobile layout considerations');
+      prompts.push('Use these scope slices:');
+      prompts.push(slices.map((s,i)=>`- M${i+1}: ${s}`).join('\n'));
+      prompts.push('');
+
+      prompts.push('## 3) Data model + state (if applicable)');
+      prompts.push('Role: You are a careful engineer who documents state.');
+      prompts.push('Task: Define a data model (types/fields) and UI state machine.');
+      prompts.push('Acceptance criteria to satisfy:');
+      prompts.push(acceptance.map(x=>`- ${x}`).join('\n'));
+      prompts.push('');
+
+      prompts.push('## 4) Implementation plan (90-minute sprint)');
+      prompts.push('Role: You are a staff engineer optimizing for shippable demos.');
+      prompts.push('Task: Create a minute-by-minute plan with checkpoints and cut-lines (what to cut first).');
+      prompts.push('Include:');
+      prompts.push('- 6 to 10 steps');
+      prompts.push('- Definition of done for each step');
+      prompts.push('- If blocked: fallback plan');
+      prompts.push('');
+
+      prompts.push('## 5) Test prompts');
+      prompts.push('Role: You are QA and want to break the demo.');
+      prompts.push('Task: Generate 12 tests: 6 happy, 6 adversarial.');
+      prompts.push('Seed for deterministic variation: ' + seed);
+      prompts.push('Edge cases to include:');
+      prompts.push(edgeCases.map(x=>`- ${x}`).join('\n'));
+      prompts.push('');
+
+      return prompts.join('\n');
+    }
+
+    function buildPitch(plan){
+      const {ideaText, audience, archetype, kpis} = plan;
+      const a = ARCHETYPES[archetype] || ARCHETYPES.analyzer;
+      const who = (audience||'').trim() ? `for ${audience.trim()}` : 'for anyone who wants to ship faster';
+
+      const hook = hookLine(ideaText, archetype);
+      const claim = `It compresses the “I want to build this someday” gap into a small, testable demo plan (${kpis.scopeLabel.toLowerCase()} scope, ${kpis.chanceLabel.toLowerCase()} ship chance).`;
+      const features = [
+        'Takes your messy idea and outputs a spec with milestones + edge cases',
+        'Generates a copy/paste prompt pack for product, UI, and QA',
+        'Runs a mini sprint simulation so you can pick what to do next'
+      ];
+      const close = 'If you can describe the idea, you can leave with a shippable slice and a demo script.';
+
+      return [
+        '# Demo Pitch',
+        '',
+        hook,
+        '',
+        `Built ${who}. Archetype: ${archetype} — ${a.vibe}.`,
+        '',
+        claim,
+        '',
+        'What it does:',
+        features.map(x=>`- ${x}`).join('\n'),
+        '',
+        close,
+        ''
+      ].join('\n');
+    }
+
+    function hookLine(ideaText, archetype){
+      const t = (ideaText||'').trim();
+      if(!t) return 'If you have an idea but it keeps living in a notes app, this turns it into a demo you can ship.';
+      const short = t.length > 90 ? t.slice(0, 90)+'…' : t;
+      const prefix = archetype === 'game' ? 'I turned' : 'I built a quick tool for';
+      return `${prefix} “${short}” into a shippable plan in one screen.`;
+    }
+
+    function buildCritique(plan){
+      const {ideaText, audience, deadlineMin, risk, constraints, ingredients, kpis, slices} = plan;
+      const issues = [];
+
+      if(!ideaText.trim()) issues.push({lvl:'bad', msg:'Your idea is empty. Add one sentence describing the core job-to-be-done.'});
+      if(ideaText.trim().length < 70) issues.push({lvl:'warn', msg:'Idea is short. Add one constraint or example input to reduce ambiguity.'});
+      if(!audience.trim()) issues.push({lvl:'warn', msg:'Audience is unspecified. Even “just me” helps prioritize UX.'});
+      if(deadlineMin <= 45 && ingredients.size >= 4) issues.push({lvl:'bad', msg:'Too many ingredients for 45 minutes. Cut to 2–3 max.'});
+      if(kpis.complexity > 95 && kpis.chance < .55) issues.push({lvl:'bad', msg:'Complexity is high relative to ship chance. Tighten scope or lower novelty.'});
+      if(constraints.has('limiteddeps') && ingredients.has('canvas')) issues.push({lvl:'warn', msg:'Canvas + no dependencies is fine, but keep the viz minimal and fast.'});
+      if(constraints.has('offline') && ingredients.has('import')) issues.push({lvl:'ok', msg:'Offline import is a great demo: parse file locally and visualize immediately.'});
+
+      // Add slice-based notes
+      if(slices.length > 8) issues.push({lvl:'warn', msg:'You have many milestones. Consider making only the first 5 “must ship”.'});
+
+      // Recommendations
+      const recs = [];
+      recs.push('Define a “cut line”: if time runs low, what features get removed first?');
+      recs.push('Make the happy path 2 minutes: user enters input, gets output, can export/share.');
+      recs.push('Write 5 adversarial tests early (empty input, huge input, weird characters, etc.).');
+
+      return {
+        issues,
+        recs
+      };
+    }
+
+    function buildEdgeCases(rng, ideaText, archetype, constraints, ingredients){
+      const base = [
+        'Empty input fields',
+        'Very long text input (10k chars)',
+        'Non-ASCII characters and emojis in input',
+        'Rapid toggling of options causes inconsistent state',
+        'Export triggered before outputs are generated',
+        'Browser refresh resets state unexpectedly',
+        'Mobile viewport: overflow or clipped buttons',
+        'Keyboard-only navigation misses a control'
+      ];
+
+      const arche = {
+        analyzer: ['Ambiguous requirements cause contradictory acceptance criteria', 'Spec mentions a feature not present in milestones'],
+        simulator: ['Simulation enters an impossible state (negative time)', 'Auto-run loops forever'],
+        creator: ['Undo fails to restore the previous output', 'Preset edits overwrite another preset'],
+        dashboard: ['Filter combination yields zero results but UI looks broken', 'Sorting fails when values are equal'],
+        game: ['Scoring is inconsistent across rounds', 'Difficulty makes the game unwinnable'],
+        agent: ['A step fails but the system marks it done', 'Retry duplicates artifacts instead of replacing them']
+      };
+
+      let out = base.concat(arche[archetype] || []);
+
+      if(ingredients.has('import')) out.push('Imported file has missing headers or mismatched columns');
+      if(ingredients.has('scoring')) out.push('Score explanation does not sum to total score');
+      if(constraints.has('privacy')) out.push('Local storage contains sensitive input unexpectedly');
+
+      // deterministic shuffle then pick 10-14
+      for(let i=out.length-1;i>0;i--){
+        const j = Math.floor(rng()*(i+1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      const target = 10 + Math.floor(rng()*5);
+      return out.slice(0, target);
+    }
+
+    function generatePlan(){
+      const ideaText = $('#idea').value;
+      const audience = $('#audience').value;
+      const deadlineMin = parseInt($('#deadline').value, 10);
+      const risk = $('#risk').value;
+
+      const seedSource = [ideaText, audience, deadlineMin, risk, state.archetype, [...state.constraints].sort().join(','), [...state.ingredients].sort().join(',')].join('|');
+      state.seed = hashSeed(seedSource);
+      const rng = mulberry32(state.seed);
+
+      const kpis = computeKPIs(deadlineMin, risk, state.archetype, state.constraints, state.ingredients, ideaText);
+      const slices = deriveSlices(rng, state.archetype, deadlineMin, state.constraints, state.ingredients);
+      const acceptance = deriveAcceptance(rng, ideaText, state.archetype, state.constraints, state.ingredients);
+      const edgeCases = buildEdgeCases(rng, ideaText, state.archetype, state.constraints, state.ingredients);
+
+      const plan = {
+        seed: state.seed,
+        ideaText,
+        audience,
+        deadlineMin,
+        risk,
+        archetype: state.archetype,
+        constraints: new Set([...state.constraints]),
+        ingredients: new Set([...state.ingredients]),
+        kpis,
+        slices,
+        acceptance,
+        edgeCases
+      };
+
+      state.lastPlan = plan;
+
+      $('#seedLine').textContent = 'Seed: ' + state.seed;
+      updateKPIs(kpis);
+      setStatus('ok', 'Plan generated. Explore tabs and run the sprint sim.');
+
+      // Outputs
+      $('#outSpec').textContent = buildSpec(plan);
+      $('#outPrompts').textContent = buildPromptPack(plan);
+      $('#outPitch').textContent = buildPitch(plan);
+
+      // Prepare sim baseline
+      resetSimFromPlan(plan);
+
+      toast('Generated', 'Spec, prompt pack, and pitch updated.');
+    }
+
+    function updateKPIs(k){
+      $('#kpiScope').textContent = k.scopeLabel;
+      $('#kpiQuality').textContent = k.qualityLabel;
+      $('#kpiComplexity').textContent = k.complexityLabel;
+      $('#kpiChance').textContent = k.chanceLabel;
+
+      // Color code chance
+      const el = $('#kpiChance');
+      el.classList.remove('ok','warn','bad');
+      if(k.chance >= .75) el.classList.add('ok');
+      else if(k.chance >= .55) el.classList.add('warn');
+      else el.classList.add('bad');
+    }
+
+    function setStatus(level, text){
+      const badge = $('#statusBadge');
+      const dot = badge.querySelector('.dot');
+      dot.classList.remove('ok','warn','bad');
+      dot.classList.add(level);
+      $('#statusText').textContent = text;
+    }
+
+    // ---------- Sprint simulation ----------
+
+    function resetSimFromPlan(plan){
+      const k = plan.kpis;
+      const deadlineMin = plan.deadlineMin;
+      const baseTime = deadlineMin;
+
+      // Map KPIs into sim parameters
+      let quality = clamp(k.quality/100, 0.2, 0.95);
+      let scope = clamp(k.scope/100, 0.15, 1.0);
+      let stress = clamp((k.complexity/120), 0.05, 0.95);
+
+      // Constraints reduce stress
+      if(plan.constraints.has('offline')) stress = clamp(stress - .05, 0.05, 0.95);
+      if(plan.constraints.has('noauth')) stress = clamp(stress - .03, 0.05, 0.95);
+      if(plan.constraints.has('speed')) stress = clamp(stress + .03, 0.05, 0.95);
+
+      // Risk modifies quality vs scope
+      if(plan.risk === 'high'){ scope = clamp(scope + .06, 0.15, 1.0); quality = clamp(quality - .05, 0.2, 0.95); }
+      if(plan.risk === 'low'){ scope = clamp(scope - .04, 0.15, 1.0); quality = clamp(quality + .05, 0.2, 0.95); }
+
+      state.sim = {
+        t: baseTime,
+        quality,
+        scope,
+        stress,
+        done: false,
+        log: [],
+        history: [{t:baseTime, quality, scope, stress}],
+        rng: mulberry32(plan.seed ^ 0x9e3779b9)
+      };
+
+      // Clear timeline UI
+      $('#timeline').innerHTML = '';
+      updateSimUI();
+      drawSpark();
+    }
+
+    function simActions(){
+      // Each action returns deltas and message
+      const plan = state.lastPlan;
+      const rng = state.sim?.rng || Math.random;
+
+      const base = [
+        {
+          k:'wireframe',
+          name:'Sketch UI states',
+          effect: ()=>({dt: -12, dq: +0.05, ds: +0.02, dst: -0.02}),
+          note:'Clarifies the happy path and makes coding faster.'
+        },
+        {
+          k:'hardcode',
+          name:'Hardcode a working happy path',
+          effect: ()=>({dt: -18, dq: +0.02, ds: +0.08, dst: +0.03}),
+          note:'You get something demoable quickly, but may accumulate mess.'
+        },
+        {
+          k:'tests',
+          name:'Write adversarial tests',
+          effect: ()=>({dt: -14, dq: +0.07, ds: 0.00, dst: -0.01}),
+          note:'Increases confidence and surfaces edge cases early.'
+        },
+        {
+          k:'polish',
+          name:'Polish UI + micro-interactions',
+          effect: ()=>({dt: -16, dq: +0.05, ds: +0.01, dst: -0.02}),
+          note:'Makes the demo feel real; reduces perceived risk.'
+        },
+        {
+          k:'cut',
+          name:'Cut scope aggressively',
+          effect: ()=>({dt: -6, dq: +0.01, ds: -0.10, dst: -0.05}),
+          note:'Sacrifices features to protect shipping.'
+        },
+        {
+          k:'refactor',
+          name:'Refactor core state',
+          effect: ()=>({dt: -20, dq: +0.06, ds: -0.02, dst: -0.04}),
+          note:'Slower now, safer later.'
+        },
+        {
+          k:'integrate',
+          name:'Add one ingredient feature',
+          effect: ()=>{
+            const boost = plan?.ingredients.size ? 0.04 : 0.02;
+            return ({dt: -18, dq: +0.01, ds: +0.07, dst: +0.05 + boost});
+          },
+          note:'New capability increases scope but can raise stress.'
+        },
+        {
+          k:'docs',
+          name:'Write the demo narrative',
+          effect: ()=>({dt: -10, dq: +0.03, ds: +0.00, dst: -0.03}),
+          note:'A strong story makes the demo coherent.'
+        }
+      ];
+
+      // Add constraint-specific actions
+      if(plan?.constraints.has('accessibility')){
+        base.push({
+          k:'a11y',
+          name:'Accessibility pass',
+          effect: ()=>({dt: -12, dq: +0.05, ds: +0.01, dst: -0.03}),
+          note:'Keyboard + focus + semantics.'
+        });
+      }
+      if(plan?.constraints.has('speed')){
+        base.push({
+          k:'perf',
+          name:'Performance pass',
+          effect: ()=>({dt: -12, dq: +0.04, ds: +0.00, dst: -0.02}),
+          note:'Remove jank and heavy updates.'
+        });
+      }
+
+      // Sort by randomness to keep it fresh
+      base.sort(()=> (rng() - 0.5));
+      return base.slice(0, 6);
+    }
+
+    function simStep(pickedK=null){
+      if(!state.sim || !state.lastPlan){
+        toast('Start first', 'Generate a plan, then start the sprint.');
+        return;
+      }
+      if(state.sim.done){
+        toast('Sprint ended', 'Reset the sim to run again.');
+        return;
+      }
+
+      const acts = simActions();
+      let action = acts[0];
+      if(pickedK){
+        const found = acts.find(a=>a.k===pickedK);
+        if(found) action = found;
+      }
+
+      const {dt, dq, ds, dst} = action.effect();
+
+      state.sim.t = Math.max(0, state.sim.t + dt);
+      state.sim.quality = clamp(state.sim.quality + dq - (state.sim.stress*0.02), 0.15, 0.98);
+      state.sim.scope = clamp(state.sim.scope + ds, 0.05, 1.15);
+      state.sim.stress = clamp(state.sim.stress + dst + (state.sim.scope*0.02) - (state.sim.quality*0.015), 0.05, 0.98);
+
+      const msg = `${action.name}: time ${dt}m, quality ${signed(dq)}, scope ${signed(ds)}, stress ${signed(dst)}.`;
+      addTimeline(msg, action.note);
+
+      state.sim.history.push({t: state.sim.t, quality: state.sim.quality, scope: state.sim.scope, stress: state.sim.stress});
+
+      // Determine done condition: time 0 OR scope >= 0.85 and quality >= 0.65
+      const finish = (state.sim.t <= 0) || (state.sim.scope >= 0.85 && state.sim.quality >= 0.65);
+      if(finish){
+        state.sim.done = true;
+        const outcome = evaluateOutcome();
+        addTimeline('Sprint outcome: ' + outcome.headline, outcome.detail);
+        toast('Sprint complete', outcome.headline);
+      }
+
+      updateSimUI();
+      drawSpark();
+    }
+
+    function signed(x){
+      const n = Math.round(x*100)/100;
+      if(n > 0) return `+${n.toFixed(2)}`;
+      if(n < 0) return `${n.toFixed(2)}`;
+      return '0.00';
+    }
+
+    function evaluateOutcome(){
+      const s = state.sim;
+      const score = clamp((s.quality*0.48 + s.scope*0.40 + (1-s.stress)*0.12), 0, 1);
+      const grade = score > .82 ? 'Shipped strong demo' : score > .68 ? 'Shipped decent demo' : score > .54 ? 'Barely shipped' : 'Did not ship';
+      const rec = score > .68
+        ? 'Next: record a 30s video demo, then iterate on the single weakest part.'
+        : 'Next: cut scope by 20%, lock the happy path, and add 3 tests.';
+
+      return {
+        score,
+        headline: `${grade} (score ${Math.round(score*100)}/100)`,
+        detail: `Final state — time ${s.t}m, quality ${Math.round(s.quality*100)}/100, scope ${Math.round(s.scope*100)}/100, stress ${Math.round(s.stress*100)}/100. ${rec}`
+      };
+    }
+
+    function addTimeline(msg, note=''){
+      const wrap = $('#timeline');
+      const row = document.createElement('div');
+      row.className = 'tlRow';
+      row.innerHTML = `<div class="tlTime">${escapeHtml(nowTime())}</div><div class="tlMsg">${escapeHtml(msg)}${note?`\n${escapeHtml(note)}`:''}</div>`;
+      wrap.prepend(row);
+      // keep only last 18
+      const rows = $$('.tlRow', wrap);
+      rows.slice(18).forEach(r=>r.remove());
+    }
+
+    function updateSimUI(){
+      const s = state.sim;
+      if(!s){
+        $('#simTime').textContent = '—';
+        $('#simQuality').textContent = '—';
+        $('#simScope').textContent = '—';
+        $('#simStress').textContent = '—';
+        return;
+      }
+
+      $('#simTime').textContent = String(Math.round(s.t));
+      $('#simQuality').textContent = String(Math.round(s.quality*100));
+      $('#simScope').textContent = String(Math.round(s.scope*100));
+      $('#simStress').textContent = String(Math.round(s.stress*100));
+
+      // color quality
+      const q = $('#simQuality');
+      q.classList.remove('ok','warn','bad');
+      if(s.quality >= .75) q.classList.add('ok');
+      else if(s.quality >= .60) q.classList.add('warn');
+      else q.classList.add('bad');
+
+      const st = $('#simStress');
+      st.classList.remove('ok','warn','bad');
+      if(s.stress <= .35) st.classList.add('ok');
+      else if(s.stress <= .62) st.classList.add('warn');
+      else st.classList.add('bad');
+    }
+
+    function drawSpark(){
+      const c = $('#spark');
+      const ctx = c.getContext('2d');
+      const rect = c.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      c.width = Math.floor(rect.width * dpr);
+      c.height = Math.floor(rect.height * dpr);
+      ctx.scale(dpr, dpr);
+
+      // Background
+      ctx.clearRect(0,0,rect.width,rect.height);
+
+      // faint grid
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+      for(let y=20;y<rect.height;y+=22){
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(rect.width,y);
+        ctx.stroke();
+      }
+      for(let x=20;x<rect.width;x+=44){
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,rect.height);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      const s = state.sim;
+      if(!s || s.history.length < 2){
+        // placeholder wave
+        ctx.strokeStyle = 'rgba(124,92,255,0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for(let x=0;x<=rect.width;x++){
+          const y = rect.height/2 + Math.sin(x/28)*10;
+          if(x===0) ctx.moveTo(x,y);
+          else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        return;
+      }
+
+      // map series
+      const hist = s.history.slice(-26);
+      const maxN = hist.length-1;
+      const pad = 10;
+
+      function mapX(i){
+        const t = i/maxN;
+        return pad + t*(rect.width - pad*2);
+      }
+
+      function mapY(v){
+        // v in 0..1
+        return pad + (1 - v) * (rect.height - pad*2);
+      }
+
+      // scope line
+      strokeLine(hist.map((p,i)=>[mapX(i), mapY(clamp(p.scope/1.05,0,1))]), 'rgba(0,212,255,0.85)');
+      // quality line
+      strokeLine(hist.map((p,i)=>[mapX(i), mapY(p.quality)]), 'rgba(124,92,255,0.85)');
+      // stress line (invert)
+      strokeLine(hist.map((p,i)=>[mapX(i), mapY(1-p.stress)]), 'rgba(255,92,255,0.70)');
+
+      // legend
+      ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.fillText('quality', 12, 16);
+      ctx.fillStyle = 'rgba(124,92,255,0.9)';
+      ctx.fillRect(62, 8, 10, 10);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.fillText('scope', 92, 16);
+      ctx.fillStyle = 'rgba(0,212,255,0.9)';
+      ctx.fillRect(132, 8, 10, 10);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      ctx.fillText('calm', 160, 16);
+      ctx.fillStyle = 'rgba(255,92,255,0.8)';
+      ctx.fillRect(199, 8, 10, 10);
+    }
+
+    function strokeLine(points, color){
+      const c = $('#spark');
+      const ctx = c.getContext('2d');
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      points.forEach(([x,y], i)=>{ if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.stroke();
+    }
+
+    function simStart(){
+      if(!state.lastPlan){
+        toast('Generate first', 'Click “Generate Plan” before starting a sprint.');
+        return;
+      }
+      resetSimFromPlan(state.lastPlan);
+      addTimeline('Sprint started.', 'Pick actions. Aim for scope >= 85 and quality >= 65 before time runs out.');
+      toast('Sprint started', 'Use Next Action or Auto-Run.');
+    }
+
+    function simAuto(){
+      if(!state.sim){
+        toast('Start sprint', 'Click Start Sprint first.');
+        return;
+      }
+      let steps = 0;
+      const tick = ()=>{
+        if(!state.sim || state.sim.done) return;
+        simStep();
+        steps++;
+        if(steps < 10 && !state.sim.done) setTimeout(tick, 220);
+      };
+      tick();
+    }
+
+    // ---------- Export ----------
+
+    function exportAll(){
+      const plan = state.lastPlan;
+      const bundle = {
+        meta: {
+          app: 'ShipSprint AI',
+          generated_at: new Date().toISOString(),
+          seed: state.seed,
+          trend: 'Eight years of wanting, three months of building with AI'
+        },
+        inputs: plan ? {
+          idea: plan.ideaText,
+          audience: plan.audience,
+          deadline_minutes: plan.deadlineMin,
+          risk: plan.risk,
+          archetype: plan.archetype,
+          constraints: [...plan.constraints],
+          ingredients: [...plan.ingredients]
+        } : null,
+        outputs: {
+          spec: $('#outSpec').textContent,
+          prompt_pack: $('#outPrompts').textContent,
+          pitch: $('#outPitch').textContent
+        },
+        sprint: state.sim ? {
+          t: state.sim.t,
+          quality: state.sim.quality,
+          scope: state.sim.scope,
+          stress: state.sim.stress,
+          done: state.sim.done,
+          history: state.sim.history,
+          log: state.sim.log
+        } : null
+      };
+
+      downloadText('shipsprint_bundle.json', JSON.stringify(bundle, null, 2));
+    }
+
+    // ---------- Mutations / Quick actions ----------
+
+    function tightenScope(){
+      // Remove one ingredient (if any) and reduce deadline if high
+      if(state.ingredients.size){
+        const k = [...state.ingredients][0];
+        state.ingredients.delete(k);
+        setChipActive('#ingredients', k, false);
+        toast('Tightened', 'Removed one ingredient: ' + k);
+      }else{
+        toast('Tightened', 'No ingredients to remove. Try shortening the idea into one sentence.');
+      }
+      if(parseInt($('#deadline').value,10) > 90) $('#deadline').value = '90';
+      if($('#risk').value === 'high') $('#risk').value = 'med';
+      if(state.lastPlan) generatePlan();
+    }
+
+    function goBold(){
+      $('#risk').value = 'high';
+      // add a random ingredient
+      const available = INGREDIENTS.map(x=>x.k).filter(k=>!state.ingredients.has(k));
+      if(available.length){
+        const k = available[Math.floor(Math.random()*available.length)];
+        state.ingredients.add(k);
+        setChipActive('#ingredients', k, true);
+      }
+      toast('Bold mode', 'Higher novelty. Watch ship chance.');
+      if(state.lastPlan) generatePlan();
+    }
+
+    function randomIdea(){
+      const idea = pick(Math.random, RANDOM_IDEAS);
+      $('#idea').value = idea;
+      $('#audience').value = pick(Math.random, ['solo builders', 'students', 'busy professionals', 'small teams', 'makers']);
+      setStatus('warn', 'Randomized inputs. Click Generate Plan.');
+      $('#idea').focus();
+    }
+
+    function mutatePrompts(){
+      if(!state.lastPlan){ toast('Generate first', 'Create a plan, then mutate prompts.'); return; }
+      const rng = mulberry32(state.seed ^ 0xA53A9A1D);
+      const modes = [
+        {name:'Stricter', add:'Be strict: refuse scope creep, ask for missing info, propose a cut line.'},
+        {name:'Friendlier', add:'Be friendly: give encouragement, keep output concise, include examples.'},
+        {name:'More technical', add:'Be technical: include pseudocode, data types, and performance notes.'},
+        {name:'More creative', add:'Be creative: propose an unexpected interaction or delightful twist.'}
+      ];
+      const m = pick(rng, modes);
+      const text = $('#outPrompts').textContent;
+      const mutated = text.replace('Role:', `Mutation mode: ${m.name}\nExtra instruction: ${m.add}\n\nRole:`);
+      $('#outPrompts').textContent = mutated;
+      toast('Mutated', `Prompt pack adjusted: ${m.name}.`);
+    }
+
+    function makeTweetDraft(){
+      if(!state.lastPlan){ toast('Generate first', 'Create a plan, then draft a tweet.'); return; }
+      const p = state.lastPlan;
+      const tweet = [
+        'Built a tiny "idea -> demo" accelerator:',
+        '',
+        `ShipSprint AI turns a fuzzy idea into a spec + prompt pack + mini sprint sim in one screen.`,
+        '',
+        `Today\'s input idea: ${truncate(p.ideaText.trim()||'(empty)', 90)}`,
+        `Ship chance: ${p.kpis.chanceLabel} (${Math.round(p.kpis.chance*100)}%)`,
+        '',
+        'If AI can compress building cycles, your bottleneck becomes clarity.',
+        '',
+        '#buildinpublic #ai'
+      ].join('\n');
+      openModal('Tweet Draft', tweet, 'tweet_draft.txt');
+    }
+
+    function truncate(s, n){ return s.length>n ? s.slice(0,n-1)+'…' : s; }
+
+    // ---------- UI wiring ----------
+
+    function initChips(){
+      const conWrap = $('#constraints');
+      conWrap.innerHTML = '';
+      for(const c of CONSTRAINTS){
+        const el = document.createElement('div');
+        el.className = 'chip';
+        el.dataset.k = c.k;
+        el.title = c.hint;
+        el.textContent = c.name;
+        el.addEventListener('click', ()=>{
+          if(state.constraints.has(c.k)) state.constraints.delete(c.k);
+          else state.constraints.add(c.k);
+          el.classList.toggle('active');
+          setStatus('warn', 'Updated toggles. Click Generate Plan.');
+        });
+        conWrap.appendChild(el);
+      }
+
+      const ingWrap = $('#ingredients');
+      ingWrap.innerHTML = '';
+      for(const it of INGREDIENTS){
+        const el = document.createElement('div');
+        el.className = 'chip';
+        el.dataset.k = it.k;
+        el.title = it.hint;
+        el.textContent = it.name;
+        el.addEventListener('click', ()=>{
+          if(state.ingredients.has(it.k)) state.ingredients.delete(it.k);
+          else state.ingredients.add(it.k);
+          el.classList.toggle('active');
+          setStatus('warn', 'Updated toggles. Click Generate Plan.');
+        });
+        ingWrap.appendChild(el);
+      }
+
+      // Default recommended ingredients for the theme
+      ['export','sim','timeline','scoring','canvas'].forEach(k=>{
+        state.ingredients.add(k);
+        setChipActive('#ingredients', k, true);
+      });
+      // Default constraints
+      ['offline','noauth','privacy','mobile','limiteddeps'].forEach(k=>{
+        state.constraints.add(k);
+        setChipActive('#constraints', k, true);
+      });
+    }
+
+    function setChipActive(containerSel, k, on){
+      const el = $(`${containerSel} .chip[data-k="${k}"]`);
+      if(!el) return;
+      el.classList.toggle('active', on);
+    }
+
+    function initArchetypes(){
+      $$('#archetypes .chip').forEach(ch=>{
+        ch.addEventListener('click', ()=>{
+          $$('#archetypes .chip').forEach(x=>x.classList.remove('active'));
+          ch.classList.add('active');
+          state.archetype = ch.dataset.k;
+          setStatus('warn', 'Archetype updated. Click Generate Plan.');
+          if(state.lastPlan) generatePlan();
+        });
+      });
+    }
+
+    function initTabs(){
+      $$('.tab').forEach(t=>{
+        t.addEventListener('click', ()=> activateTab(t.dataset.tab));
+        t.addEventListener('keydown', (e)=>{
+          if(e.key==='Enter' || e.key===' '){ e.preventDefault(); activateTab(t.dataset.tab); }
+        });
+      });
+    }
+
+    function activateTab(name){
+      $$('.tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===name));
+      $$('.panel').forEach(p=> p.classList.remove('active'));
+      $(`#panel-${name}`).classList.add('active');
+    }
+
+    function initButtons(){
+      $('#btnStart').addEventListener('click', generatePlan);
+      $('#btnReset').addEventListener('click', ()=>{
+        if(confirm('Reset all inputs and outputs?')){
+          location.reload();
+        }
+      });
+
+      $('#btnExport').addEventListener('click', exportAll);
+
+      $('#btnRandom').addEventListener('click', randomIdea);
+      $('#btnTighten').addEventListener('click', tightenScope);
+      $('#btnBold').addEventListener('click', goBold);
+
+      // Copy buttons
+      $$('[data-copy]').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.copy;
+          copyText($('#'+id).textContent);
+        });
+      });
+
+      // Download buttons
+      $$('[data-download]').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const kind = b.dataset.download;
+          const map = {
+            spec: {fn:'shipsprint_spec.md', el:'#outSpec'},
+            prompts: {fn:'shipsprint_prompts.md', el:'#outPrompts'},
+            pitch: {fn:'shipsprint_pitch.md', el:'#outPitch'}
+          };
+          const m = map[kind];
+          if(!m) return;
+          downloadText(m.fn, $(m.el).textContent);
+        });
+      });
+
+      $('#btnCritique').addEventListener('click', ()=>{
+        if(!state.lastPlan){ toast('Generate first','Create a plan before critique.'); return; }
+        const c = buildCritique(state.lastPlan);
+        const lines = [];
+        lines.push('# Self-Critique');
+        lines.push('');
+        if(!c.issues.length){
+          lines.push('- Looks good. Your idea is clear enough to ship a demo.' );
+        }else{
+          lines.push('## Issues');
+          for(const it of c.issues){
+            const tag = it.lvl.toUpperCase();
+            lines.push(`- [${tag}] ${it.msg}`);
+          }
+        }
+        lines.push('');
+        lines.push('## Recommendations');
+        c.recs.forEach(r=> lines.push('- ' + r));
+        openModal('Self-Critique', lines.join('\n'), 'shipsprint_critique.md');
+      });
+
+      $('#btnPromptMutate').addEventListener('click', mutatePrompts);
+      $('#btnTweet').addEventListener('click', makeTweetDraft);
+
+      // Sim buttons
+      $('#btnSimStart').addEventListener('click', simStart);
+      $('#btnSimStep').addEventListener('click', ()=> simStep());
+      $('#btnSimAuto').addEventListener('click', simAuto);
+      $('#btnSimReset').addEventListener('click', ()=>{
+        if(state.lastPlan) resetSimFromPlan(state.lastPlan);
+        addTimeline('Sprint reset.', 'Try a different sequence of actions.');
+        toast('Reset', 'Simulation reset.');
+      });
+
+      // Hotkeys
+      $('#btnHotkeys').addEventListener('click', ()=>{
+        const txt = [
+          '# Hotkeys',
+          '',
+          '- Ctrl + Enter: Generate plan',
+          '- / : Focus idea input',
+          '- 1..4: Switch tabs (Spec/Prompts/Sprint/Pitch)',
+          '- S: Start sprint',
+          '- N: Next sprint action',
+          '- A: Auto-run sprint',
+          '- E: Export bundle',
+          '- Esc: Close modal'
+        ].join('\n');
+        openModal('Hotkeys', txt, 'shipsprint_hotkeys.txt');
+      });
+    }
+
+    function openModal(title, text, defaultFilename='modal.txt'){
+      $('#modalTitle').textContent = title;
+      $('#modalOut').textContent = text;
+      $('#modalOverlay').classList.add('show');
+      $('#btnModalDownload').onclick = ()=> downloadText(defaultFilename, text);
+      $('#btnModalCopy').onclick = ()=> copyText(text);
+    }
+
+    function closeModal(){
+      $('#modalOverlay').classList.remove('show');
+    }
+
+    function initInputs(){
+      const onChange = ()=>{
+        setStatus('warn', 'Edited inputs. Click Generate Plan.');
+      };
+      ['idea','audience','deadline','risk'].forEach(id=>{
+        $('#'+id).addEventListener('input', onChange);
+        $('#'+id).addEventListener('change', onChange);
+      });
+
+      // Prefill an idea that matches today's theme
+      $('#idea').value = 'A one-page app that helps solo builders turn a vague product idea into a tight demo plan, a prompt pack, and a short sprint checklist — with a playful simulation of tradeoffs.';
+      $('#audience').value = 'solo builders and makers';
+
+      setStatus('warn', 'Prefilled a theme-matching idea. Click Generate Plan.');
+
+      // Focus convenience
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey){
+          const active = document.activeElement;
+          const isTyping = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA');
+          if(!isTyping){
+            e.preventDefault();
+            $('#idea').focus();
+          }
+        }
+        if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+          e.preventDefault();
+          generatePlan();
+        }
+        if(e.key === 'Escape') closeModal();
+
+        if(!e.ctrlKey && !e.metaKey && !e.altKey){
+          if(['1','2','3','4'].includes(e.key)){
+            const map = {'1':'spec','2':'prompts','3':'sprint','4':'pitch'};
+            activateTab(map[e.key]);
+          }
+          if(e.key.toLowerCase() === 's') simStart();
+          if(e.key.toLowerCase() === 'n') simStep();
+          if(e.key.toLowerCase() === 'a') simAuto();
+          if(e.key.toLowerCase() === 'e') exportAll();
+        }
+      });
+
+      $('#modalOverlay').addEventListener('click', (e)=>{
+        if(e.target.id === 'modalOverlay') closeModal();
+      });
+      $('#btnModalClose').addEventListener('click', closeModal);
+    }
+
+    // ---------- Init ----------
+
+    function init(){
+      initChips();
+      initArchetypes();
+      initTabs();
+      initButtons();
+      initInputs();
+      updateKPIs(computeKPIs(parseInt($('#deadline').value,10), $('#risk').value, state.archetype, state.constraints, state.ingredients, $('#idea').value));
+      resetSimFromPlan({
+        seed: 123,
+        ideaText: $('#idea').value,
+        audience: $('#audience').value,
+        deadlineMin: parseInt($('#deadline').value,10),
+        risk: $('#risk').value,
+        archetype: state.archetype,
+        constraints: state.constraints,
+        ingredients: state.ingredients,
+        kpis: computeKPIs(parseInt($('#deadline').value,10), $('#risk').value, state.archetype, state.constraints, state.ingredients, $('#idea').value)
+      });
+      drawSpark();
+
+      // Light call-to-action
+      setTimeout(()=> toast('Ready', 'Enter your idea then press Ctrl+Enter to generate.'), 500);
+    }
+
+    window.addEventListener('resize', ()=>{
+      // re-render spark chart on resize
+      drawSpark();
+    });
+
+    init();
+  </script>
+</body>
+</html>
